@@ -2,6 +2,11 @@ void setup() {
   // initialize the digital pin as an output.
   // Pin 13 has an LED connected on most Arduino boards:
   pinMode(13, OUTPUT);
+  pinMode(11, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(8, OUTPUT);
+  
   DDRA=0xff;
   DDRC=0xff;
   DDRC=0xff;
@@ -39,10 +44,25 @@ unsigned char dispdata0[][10]=
 
 #define DEPTH 10
 #define ROWS 24
+unsigned char mask=0;
 void loop() {
-  unsigned char x,y,en;
+  unsigned char x,y,z,en;
+  
+  digitalWrite(9, HIGH);  //out dis
+  
+  digitalWrite(8, HIGH);   //data high
+  digitalWrite(10, HIGH);  //shift
+  
+  
   for(y=0;y<ROWS;y++)
   {
+      digitalWrite(10, HIGH);  //shift
+      digitalWrite(10, LOW);
+      digitalWrite(8, LOW);   //data low
+    digitalWrite(9, HIGH);  //out dis
+      digitalWrite(11, HIGH);  //store
+      digitalWrite(11, LOW);
+    
     if((y & 7)==0)
     {
        en=1;
@@ -50,25 +70,25 @@ void loop() {
     PORTC=0x00;
     PORTK=0x00;
     PORTF=0x00;
+    mask=0x00;
+    for (z=0;z<3;z++)
+    {
     for (x=0;x<DEPTH;x++)
     {
-      PORTA=dispdata0[y][x];
+      PORTA=dispdata0[y][x] ^ mask;
       digitalWrite(13, HIGH);   // set the LED on
       digitalWrite(13, LOW);    // set the LED off
 //    delay(1);
     }
+  mask+=0x55;
+  }
+  digitalWrite(9, LOW);  //out en
     if((y & ~7)==0)
     {
       PORTC=en;
-    }else if((y & ~7)==8)
-    {
-      PORTK=en;
-    }else if((y & ~7)==0x10)
-    {
-      PORTF=en;
     }
     en<<=1;
-    //delay(1);
+    //delay(1);    
     delayMicroseconds(200);
   }
 }
