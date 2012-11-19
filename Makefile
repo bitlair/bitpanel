@@ -1,8 +1,3 @@
-###################################################################
-#          This file is machine-generated - Do NOT edit!          #
-# Written by: Paulo H. "Taka" Torrens <paulo_torrens@hotmail.com> #
-###################################################################
-
 CC = avr-gcc $(CPP_FLAGS)
 LD = avr-gcc $(LD_FLAGS)
 AR = avr-ar $(AR_FLAGS)
@@ -39,8 +34,6 @@ $(OUTPUT).elf: $(OBJECTS) $(LIBRARIES)
 $(OUTPUT).hex: $(OUTPUT).elf
 	$(OBJCP) -O ihex -R .eeprom $(OUTPUT).elf $(OUTPUT).hex
   
-.PHONY: upload clean
-
 upload: all
 	reset_avr.sh
 	$(AVRDUDE) -p$(MCU) -carduino -P$(PORT) -b$(UPLOAD_RATE) -D -Uflash:w:$(OUTPUT).hex:i 

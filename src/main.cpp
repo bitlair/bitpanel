@@ -125,11 +125,12 @@ ISR(USART0_RX_vect)
   	   dstart1=&dispdata0[0][0];
   	   dstart2=&dispdata0[0+ROWS][0];
 	   rxbuffer=1;
-	   mask=0xff;
+	   mask=0x00;
 	}else{
   	   dstart1=&dispdata1[0][0];
   	   dstart2=&dispdata1[0+ROWS][0];
 	   rxbuffer=0;
+	   //mask=0xFF;
 	   mask=0x00;
 	}
       }
