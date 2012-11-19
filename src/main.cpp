@@ -1,8 +1,6 @@
-//#define __AVR_ATmega644__
-
-#include <WProgram.h>
 #include <inttypes.h>
-#include <iom644p.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
 
 #define DEPTH 30
 #define ROWS 24
@@ -10,10 +8,13 @@
 unsigned int remain;
 unsigned char rxstate;
 unsigned char rxbuffer;
-register unsigned char * wrptr asm("r28");
+register unsigned char * wrptr asm("r26");
+//register unsigned char * wrptr asm("r28");
 unsigned char * dstart1;
 unsigned char * dstart2;
 register unsigned char delaycnt asm ("r20");
+//register unsigned char delaycnt asm ("r20");
+unsigned char mask;
 
 unsigned char dispdata0[48][30]=
 {
@@ -65,12 +66,15 @@ unsigned char dispdata1[48][30]=
 void setup() {                
   // initialize the digital pin as an output.
   // Pin 13 has an LED connected on most Arduino boards:
-  pinMode(1, OUTPUT);  //B1 SH_CP 
-  pinMode(2, OUTPUT);  //B2 ST_CP
-  pinMode(3, OUTPUT);  //B3 OE
-  pinMode(4, OUTPUT);  //B4 DS
-  pinMode(13, OUTPUT);  //B5 clk board
-  pinMode(0, OUTPUT);  //dbg
+  DDRB=0x1E;
+  DDRD=0x20;
+//  pinMode(1, OUTPUT);  //B1 SH_CP 
+//  pinMode(2, OUTPUT);  //B2 ST_CP
+//  pinMode(3, OUTPUT);  //B3 OE
+//  pinMode(4, OUTPUT);  //B4 DS
+//  pinMode(13, OUTPUT);  //B5 clk board
+//  pinMode(0, OUTPUT);  //dbg
+
   
   DDRA=0xff;
   DDRC=0xff;  
@@ -121,10 +125,12 @@ ISR(USART0_RX_vect)
   	   dstart1=&dispdata0[0][0];
   	   dstart2=&dispdata0[0+ROWS][0];
 	   rxbuffer=1;
+	   mask=0xff;
 	}else{
   	   dstart1=&dispdata1[0][0];
   	   dstart2=&dispdata1[0+ROWS][0];
 	   rxbuffer=0;
+	   mask=0x00;
 	}
       }
   }else{
@@ -184,9 +190,12 @@ ISR(USART0_RX_vect)
 
 
 
+    int xdel;
+  unsigned char dat1,dat2;
 void loop() {
-  unsigned char x,y,z,dat1,dat2;
-  
+  unsigned char x,y;
+  while(1)
+	{  
 //      delayMicroseconds(20);
       asm("SBI 0x05,3");          //
 //      delayMicroseconds(20);
@@ -209,6 +218,7 @@ void loop() {
       asm("SBI 0x05,3");          // out dis
 //      delayMicroseconds(20);
       asm("SBI 0x05,1");          //shift
+//	asm("nop");		asm("nop");		asm("nop");		asm("nop");
 //      delayMicroseconds(20);
       asm("CBI 0x05,1");          //
 //      delayMicroseconds(20);
@@ -223,20 +233,21 @@ void loop() {
 //      dp1=&dispdata0[y][0];
 //      dp2=&dispdata0[y+ROWS][0];
    //was 5 
-    delayMicroseconds(15);
+//    delayMicroseconds(15);
     //5 ... 55
     //for(delaycnt=30;delaycnt;delaycnt--)
-//	{
-//		asm("nop");		asm("nop");		asm("nop");		asm("nop");
-//		asm("nop");		asm("nop");		asm("nop");		asm("nop");
-//	}
+    for(xdel=0;xdel<35;xdel++)
+	{
+		asm("nop");		asm("nop");		asm("nop");		asm("nop");
+		asm("nop");		asm("nop");		asm("nop");		asm("nop");
+	}
 
     for (x=0;x<DEPTH;x++)
     {
       dat1= *dp1++;
       dat2= *dp2++;
-      PORTA=dat1;
-      PORTC=dat2;
+      PORTA=dat1 ^mask;
+      PORTC=dat2 ^mask;
 //      delayMicroseconds(1);
       asm("SBI 0x0b,5");    //PD7
 //      delayMicroseconds(1);
@@ -248,11 +259,10 @@ void loop() {
 //      delayMicroseconds(50);
       asm("CBI 0x05,3");          // out en
 //    delayMicroseconds(50); //50   //100
-    int xdel;
 
 		// was 600
-    for(delaycnt=35;delaycnt;delaycnt--)
-    //for(xdel=0;xdel<35;xdel++)
+//    for(delaycnt=35;delaycnt;delaycnt--)
+    for(xdel=0;xdel<55;xdel++)
 	{
 		asm("nop");
 		asm("nop");
@@ -271,6 +281,14 @@ void loop() {
   }
 //     delayMicroseconds(10);
 //  UDR0='U';
-
+}
 }
 
+int main(void)
+{
+	setup();
+	while(1) 
+	{
+		loop();
+	}
+}
