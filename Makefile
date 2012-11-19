@@ -38,7 +38,6 @@ $(OUTPUT).elf: $(OBJECTS) $(LIBRARIES)
 
 $(OUTPUT).hex: $(OUTPUT).elf
 	$(OBJCP) -O ihex -R .eeprom $(OUTPUT).elf $(OUTPUT).hex
-	$(SIZE) $(OUTPUT).hex | scripts/size.rb $(MAX_SIZE) "$(OUTPUT).hex"
   
 .PHONY: upload clean
 
