@@ -12,8 +12,6 @@ register unsigned char * wrptr asm("r26");
 //register unsigned char * wrptr asm("r28");
 unsigned char * dstart1;
 unsigned char * dstart2;
-register unsigned char delaycnt asm ("r20");
-//register unsigned char delaycnt asm ("r20");
 unsigned char mask;
 
 unsigned char dispdata0[48][30]=
@@ -65,21 +63,17 @@ unsigned char dispdata1[48][30]=
 
 void setup() {                
   // initialize the digital pin as an output.
-  // Pin 13 has an LED connected on most Arduino boards:
-  DDRB=0x1E;
+  DDRB=0x1F;
   DDRD=0x20;
+//  pinMode(0, OUTPUT);  //dbg
 //  pinMode(1, OUTPUT);  //B1 SH_CP 
 //  pinMode(2, OUTPUT);  //B2 ST_CP
 //  pinMode(3, OUTPUT);  //B3 OE
 //  pinMode(4, OUTPUT);  //B4 DS
 //  pinMode(13, OUTPUT);  //B5 clk board
-//  pinMode(0, OUTPUT);  //dbg
 
-  
   DDRA=0xff;
   DDRC=0xff;  
-  
-//  Serial.begin(115200);
   
     //UART Initialisation
   UCSR0A |= (1<<U2X0);                                 // Double up UART
@@ -102,6 +96,7 @@ void setup() {
 
  // Serial.print("bitlair\n");  
 
+  mask=0x00;
 }
 
 
@@ -125,13 +120,13 @@ ISR(USART0_RX_vect)
   	   dstart1=&dispdata0[0][0];
   	   dstart2=&dispdata0[0+ROWS][0];
 	   rxbuffer=1;
-	   mask=0x00;
+	   //mask=0x00;
 	}else{
   	   dstart1=&dispdata1[0][0];
   	   dstart2=&dispdata1[0+ROWS][0];
 	   rxbuffer=0;
 	   //mask=0xFF;
-	   mask=0x00;
+	   //mask=0xff;
 	}
       }
   }else{
@@ -174,12 +169,8 @@ ISR(USART0_RX_vect)
        break;
     }    
   }
-  if(delaycnt>1)
-	delaycnt--;
-//  if (b == CMD_NEW_DATA)  {UDR0=b; pos=0; ptr=display_buffer;  return;}    
-//  if (pos == 384) {UDR0=b; return;} else {*ptr=b; ptr++; pos++;}  
-}
 #endif
+}
 
 
 //  pinMode(1, OUTPUT);   //B1 SH_CP 
@@ -188,101 +179,73 @@ ISR(USART0_RX_vect)
 //  pinMode(4, OUTPUT);   //B4 DS
 //  pinMode(13, OUTPUT);  //D5 clk board
 
+int xdel;
+unsigned char dat1,dat2;
 
-
-
-    int xdel;
-  unsigned char dat1,dat2;
 void loop() {
   unsigned char x,y;
+  unsigned char delaycnt;
   while(1)
-	{  
-//      delayMicroseconds(20);
-      asm("SBI 0x05,3");          //
-//      delayMicroseconds(20);
-      
-  asm("CBI 0x05,1");          //
-//      delayMicroseconds(20);
-  asm("SBI 0x05,4");          //data high
-//      delayMicroseconds(20);
-  asm("SBI 0x05,1");          //shift
-//      delayMicroseconds(20);
+  {  
+	//mask^=0xaa;
+  	asm("SBI 0x05,3");          //out dis
+  	asm("CBI 0x05,1");          //shift low
+  	asm("SBI 0x05,4");          //data high
+  	asm("SBI 0x05,1");          //shift high
   
-  unsigned char * dp1;
-  unsigned char * dp2;
-  dp1=dstart1;
-  dp2=dstart2;
+  	unsigned char * dp1;
+  	unsigned char * dp2;
+  	dp1=dstart1;
+  	dp2=dstart2;
   
-  for(y=0;y<ROWS;y++)
-  {
-//      delayMicroseconds(20);
-      asm("SBI 0x05,3");          // out dis
-//      delayMicroseconds(20);
-      asm("SBI 0x05,1");          //shift
-//	asm("nop");		asm("nop");		asm("nop");		asm("nop");
-//      delayMicroseconds(20);
-      asm("CBI 0x05,1");          //
-//      delayMicroseconds(20);
-      asm("CBI 0x05,4");         //
-//      delayMicroseconds(20);
-      asm("SBI 0x05,2");          //
-//      delayMicroseconds(20);
-      asm("CBI 0x05,2");  
-//      delayMicroseconds(20);
-
-
-//      dp1=&dispdata0[y][0];
-//      dp2=&dispdata0[y+ROWS][0];
-   //was 5 
-//    delayMicroseconds(15);
-    //5 ... 55
-    //for(delaycnt=30;delaycnt;delaycnt--)
-    for(xdel=0;xdel<35;xdel++)
+	for(y=0;y<ROWS;y++)
 	{
-		asm("nop");		asm("nop");		asm("nop");		asm("nop");
-		asm("nop");		asm("nop");		asm("nop");		asm("nop");
+//	      asm("SBI 0x05,3");        // out dis
+	      asm("CBI 0x05,3");        // out en 
+	      asm("SBI 0x05,1");        //shift
+	//	asm("nop");		asm("nop");		asm("nop");		asm("nop");
+	      asm("CBI 0x05,1");        //
+	      asm("SBI 0x05,3");        // out dis
+	      asm("CBI 0x05,4");        //
+	      asm("SBI 0x05,2");        //
+	      asm("CBI 0x05,2");  	//
+
+	   //was 5 
+	//    delayMicroseconds(15);
+	    //5 ... 55
+	    //for(delaycnt=30;delaycnt;delaycnt--)
+	    for(xdel=0;xdel<37;xdel++)
+	    //for(xdel=0;xdel<35;xdel++)
+		{
+			asm("nop");		asm("nop");		asm("nop");		asm("nop");
+			asm("nop");		asm("nop");		asm("nop");		asm("nop");
+		}
+
+	    for (x=0;x<DEPTH;x++)
+	    {
+	      dat1= *dp1++;
+	      dat2= *dp2++;
+	      PORTA=dat1 ^mask;
+	      PORTC=dat2 ^mask;
+	      asm("SBI 0x0b,5");    //PD7
+	      asm("CBI 0x0b,5");
+	    }
+	    PORTA=0;
+	    PORTC=0;
+	      asm("CBI 0x05,3");          // out en
+			// was 600
+	    //for(xdel=0;xdel<55;xdel++)
+	//45 also ok
+	    for(xdel=0;xdel<55;xdel++)
+		{
+			asm("nop");	asm("nop");	asm("nop");
+			asm("nop");	asm("nop");	asm("nop");
+			asm("nop");	asm("nop");	asm("nop");
+		}
+	    //delayMicroseconds(500); //50   //100
+	      asm("SBI 0x05,3");          //out dis
+	  }
 	}
-
-    for (x=0;x<DEPTH;x++)
-    {
-      dat1= *dp1++;
-      dat2= *dp2++;
-      PORTA=dat1 ^mask;
-      PORTC=dat2 ^mask;
-//      delayMicroseconds(1);
-      asm("SBI 0x0b,5");    //PD7
-//      delayMicroseconds(1);
-      asm("CBI 0x0b,5");
-//      delayMicroseconds(1);
-    }
-    PORTA=0;
-    PORTC=0;
-//      delayMicroseconds(50);
-      asm("CBI 0x05,3");          // out en
-//    delayMicroseconds(50); //50   //100
-
-		// was 600
-//    for(delaycnt=35;delaycnt;delaycnt--)
-    for(xdel=0;xdel<55;xdel++)
-	{
-		asm("nop");
-		asm("nop");
-		asm("nop");
-		asm("nop");
-		asm("nop");
-		asm("nop");
-		asm("nop");
-		asm("nop");
-		asm("nop");
-	}
-
-    //delayMicroseconds(500); //50   //100
-      asm("SBI 0x05,3");          //out dis
-     //delayMicroseconds(10);
-  }
-//     delayMicroseconds(10);
-//  UDR0='U';
-}
 }
 
 int main(void)
